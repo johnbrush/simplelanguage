@@ -179,7 +179,7 @@ public class Parser {
 
 	void SimpleParameter() {
 		Expect(1);
-		factory.addFormalParameter(t, SLNodeFactory.Modifier.NONE); 
+		factory.addFormalParameter(t); 
 	}
 
 	void VarargParameter() {
@@ -442,7 +442,7 @@ public class Parser {
 			if (assignmentName == null) {
 			   SemErr("invalid assignment target");
 			} else if (assignmentReceiver == null) {
-			   result = factory.createAssignment(assignmentName, value, SLNodeFactory.Modifier.NONE);
+			   result = factory.createAssignment(assignmentName, value, (SLNodeFactory.Modifiers)null);
 			} else {
 			   result = factory.createWriteProperty(assignmentReceiver, assignmentName, value);
 			} 

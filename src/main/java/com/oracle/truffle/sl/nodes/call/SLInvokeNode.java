@@ -40,59 +40,130 @@
  */
 package com.oracle.truffle.sl.nodes.call;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrumentation.StandardTags;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.sl.SLException;
 import com.oracle.truffle.sl.nodes.SLExpressionNode;
+import com.oracle.truffle.sl.parser.SLNodeFactory.Modifier;
+import com.oracle.truffle.sl.parser.SLNodeFactory.Modifiers;
 import com.oracle.truffle.sl.runtime.SLFunction;
 
 /**
- * The node for function invocation in SL. Since SL has first class functions, the {@link SLFunction
- * target function} can be computed by an arbitrary expression. This node is responsible for
- * evaluating this expression, as well as evaluating the {@link #argumentNodes arguments}. The
- * actual dispatch is then delegated to a chain of {@link SLDispatchNode} that form a polymorphic
+ * The node for function invocation in SL. Since SL has first class functions,
+ * the {@link SLFunction target function} can be computed by an arbitrary
+ * expression. This node is responsible for evaluating this expression, as well
+ * as evaluating the {@link #argumentNodes arguments}. The actual dispatch is
+ * then delegated to a chain of {@link SLDispatchNode} that form a polymorphic
  * inline cache.
  */
 @NodeInfo(shortName = "invoke")
 public final class SLInvokeNode extends SLExpressionNode {
 
-    @Child private SLExpressionNode functionNode;
-    @Children private final SLExpressionNode[] argumentNodes;
-    @Child private SLDispatchNode dispatchNode;
+	@Child
+	private SLExpressionNode functionNode;
+	@Children
+	private final SLExpressionNode[] argumentNodes;
+	@Child
+	private SLDispatchNode dispatchNode;
 
-    public SLInvokeNode(SLExpressionNode functionNode, SLExpressionNode[] argumentNodes) {
-        this.functionNode = functionNode;
-        this.argumentNodes = argumentNodes;
-        this.dispatchNode = SLDispatchNodeGen.create();
-    }
+	public SLInvokeNode(SLExpressionNode functionNode, SLExpressionNode[] argumentNodes) {
+		this.functionNode = functionNode;
+		this.argumentNodes = argumentNodes;
+		this.dispatchNode = SLDispatchNodeGen.create();
+	}
 
-    @ExplodeLoop
-    @Override
-    public Object executeGeneric(VirtualFrame frame) {
-        Object function = functionNode.executeGeneric(frame);
+	@ExplodeLoop
+	@Override
+	public Object executeGeneric(VirtualFrame frame) {
+		Object function = functionNode.executeGeneric(frame);
 
-        /*
-         * The number of arguments is constant for one invoke node. During compilation, the loop is
-         * unrolled and the execute methods of all arguments are inlined. This is triggered by the
-         * ExplodeLoop annotation on the method. The compiler assertion below illustrates that the
-         * array length is really constant.
-         */
-        CompilerAsserts.compilationConstant(argumentNodes.length);
+		/*
+		 * The number of arguments is constant for one invoke node. During
+		 * compilation, the loop is unrolled and the execute methods of all
+		 * arguments are inlined. This is triggered by the ExplodeLoop
+		 * annotation on the method. The compiler assertion below illustrates
+		 * that the array length is really constant.
+		 */
+		CompilerAsserts.compilationConstant(argumentNodes.length);
 
-        Object[] argumentValues = new Object[argumentNodes.length];
-        for (int i = 0; i < argumentNodes.length; i++) {
-            argumentValues[i] = argumentNodes[i].executeGeneric(frame);
-        }
-        return dispatchNode.executeDispatch(frame, function, argumentValues);
-    }
+		Object[] argumentValues = new Object[argumentNodes.length];
+		for (int i = 0; i < argumentNodes.length; i++) {
+			argumentValues[i] = argumentNodes[i].executeGeneric(frame);
+		}
 
-    @Override
-    protected boolean isTaggedWith(Class<?> tag) {
-        if (tag == StandardTags.CallTag.class) {
-            return true;
-        }
-        return super.isTaggedWith(tag);
-    }
+		argumentValues = adjustIfVarArg(function, argumentValues);
+
+		return dispatchNode.executeDispatch(frame, function, argumentValues);
+	}
+
+	private Object[] adjustIfVarArg(Object function, Object[] argumentValues) {
+
+		Object[] adjustedArgumentValues;
+
+		if (function instanceof SLFunction)
+			adjustedArgumentValues = adjustIfVarArg((SLFunction) function, argumentValues);
+		else
+			adjustedArgumentValues = argumentValues;
+
+		return adjustedArgumentValues;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Object[] adjustIfVarArg(SLFunction function, Object[] argumentValues) {
+		List<FrameSlot> slots = (List<FrameSlot>) function.getCallTarget().getRootNode().getFrameDescriptor()
+				.getSlots();
+		int numFormalParameters = (int) slots.stream().filter(slot -> {
+			Object info = slot.getInfo();
+			boolean isFormalParameter;
+
+			if (info != null && info instanceof Modifiers)
+				isFormalParameter = true;
+			else
+				isFormalParameter = false;
+
+			return isFormalParameter;
+		}).count();
+
+		Object[] adjustedArgumentValues;
+		
+		if ( numFormalParameters != 0 ) {
+			int argToParamDelta = argumentValues.length - numFormalParameters;
+
+			if (argToParamDelta < 0)
+				throw new SLException("Not enough arguments to invoke the function: " + function.getName());
+
+			Object info = slots.get(numFormalParameters - 1).getInfo();
+			Modifiers lastParamModifiers = (Modifiers) info;
+
+			if (lastParamModifiers.getModifiers().contains(Modifier.VARARG)) {
+				int numVarArgs = argToParamDelta + 1;
+				Object[] varargs = Arrays.copyOfRange(argumentValues, argumentValues.length - numVarArgs,
+						argumentValues.length);
+				adjustedArgumentValues = Arrays.copyOfRange(argumentValues, 0, argumentValues.length - argToParamDelta);
+				adjustedArgumentValues[adjustedArgumentValues.length - 1] = varargs;
+			} else {
+				adjustedArgumentValues = argumentValues;
+			}
+		}
+		else {
+			adjustedArgumentValues = argumentValues;
+		}
+
+		return adjustedArgumentValues;
+	}
+
+	@Override
+	protected boolean isTaggedWith(Class<?> tag) {
+		if (tag == StandardTags.CallTag.class) {
+			return true;
+		}
+		return super.isTaggedWith(tag);
+	}
 }

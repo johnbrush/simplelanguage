@@ -2,7 +2,7 @@ function main() {
 //	t1();
 //	t2();
 //	t3();
-	t4( 42 );
+	t4( 42, 43 );
 }
 
 function t1() {
@@ -39,5 +39,9 @@ function t3() {
 
 function t4( ... x )
 {
-	println( "x = " + x );
+	i = 0;
+	while ( i < arrayLength( x ) ) {
+		println( "x[ " + i + " ] = " + x[ i ] );
+		i = i + 1;
+	}
 }

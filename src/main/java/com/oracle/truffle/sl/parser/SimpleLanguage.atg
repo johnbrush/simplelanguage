@@ -108,7 +108,7 @@ Block<out SLStatementNode body, false>          (. factory.finishFunction(body);
 
 SimpleParameter
 =
-identifier										(. factory.addFormalParameter(t, SLNodeFactory.Modifier.NONE); .)
+identifier										(. factory.addFormalParameter(t); .)
 .
 
 
@@ -287,7 +287,7 @@ MemberExpression<out SLExpressionNode result, SLExpressionNode r, SLExpressionNo
     Expression<out SLExpressionNode value>      (. if (assignmentName == null) {
                                                        SemErr("invalid assignment target");
                                                    } else if (assignmentReceiver == null) {
-                                                       result = factory.createAssignment(assignmentName, value, SLNodeFactory.Modifier.NONE);
+                                                       result = factory.createAssignment(assignmentName, value, (SLNodeFactory.Modifiers)null);
                                                    } else {
                                                        result = factory.createWriteProperty(assignmentReceiver, assignmentName, value);
                                                    } .)
