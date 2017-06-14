@@ -40,6 +40,8 @@
  */
 package com.oracle.truffle.sl.nodes.access;
 
+import java.lang.reflect.Array;
+
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -68,6 +70,18 @@ public abstract class SLReadPropertyNode extends SLExpressionNode {
 
     @Specialization
     protected Object read(VirtualFrame frame, Object receiver, Object name) {
-        return readNode.executeRead(frame, receiver, name);
+    	Object result = null;
+    	
+    	if (receiver.getClass().isArray()) {
+       		if ( name instanceof Long )
+       			result = Array.get(receiver, ((Long)name).intValue());
+    		else
+    			throw new RuntimeException( "Non-integer value cannot be used as array index: " + name.toString() );
+   	}
+    	else {
+    		result = readNode.executeRead(frame, receiver, name);
+    	}
+    	
+        return result;
     }
 }

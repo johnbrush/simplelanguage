@@ -69,6 +69,7 @@ import com.oracle.truffle.sl.builtins.SLImportBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLIsExecutableBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLIsNullBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLNanoTimeBuiltinFactory;
+import com.oracle.truffle.sl.builtins.SLNewObjectArrayBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLNewObjectBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLPrintlnBuiltin;
 import com.oracle.truffle.sl.builtins.SLPrintlnBuiltinFactory;
@@ -143,6 +144,7 @@ public final class SLContext extends ExecutionContext {
         installBuiltin(SLStackTraceBuiltinFactory.getInstance());
         installBuiltin(SLHelloEqualsWorldBuiltinFactory.getInstance());
         installBuiltin(SLNewObjectBuiltinFactory.getInstance());
+        installBuiltin(SLNewObjectArrayBuiltinFactory.getInstance());
         installBuiltin(SLEvalBuiltinFactory.getInstance());
         installBuiltin(SLImportBuiltinFactory.getInstance());
         installBuiltin(SLGetSizeBuiltinFactory.getInstance());
@@ -204,6 +206,10 @@ public final class SLContext extends ExecutionContext {
      */
     public DynamicObject createObject() {
         return emptyShape.newInstance();
+    }
+
+    public Object[] createObjectArray( int length ) {
+        return new Object[ length ];
     }
 
     public static boolean isSLObject(TruffleObject value) {

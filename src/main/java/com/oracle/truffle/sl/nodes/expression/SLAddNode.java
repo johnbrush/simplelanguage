@@ -112,7 +112,12 @@ public abstract class SLAddNode extends SLBinaryNode {
     @Specialization(guards = "isString(left, right)")
     @TruffleBoundary
     protected String add(Object left, Object right) {
-        return left.toString() + right.toString();
+        return getStringOrNull(left) + getStringOrNull(right);
+    }
+    
+    private String getStringOrNull( Object o )
+    {
+    	return ( o == null ? "null " : o.toString() );
     }
 
     /**

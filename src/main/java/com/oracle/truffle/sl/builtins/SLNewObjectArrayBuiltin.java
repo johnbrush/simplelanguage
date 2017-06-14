@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,50 +38,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.sl.nodes.access;
+package com.oracle.truffle.sl.builtins;
 
-import java.lang.reflect.Array;
-
-import com.oracle.truffle.api.dsl.NodeChild;
-import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.sl.nodes.SLExpressionNode;
 
 /**
- * The node for writing a property of an object. When executed, this node:
- * <ol>
- * <li>evaluates the object expression on the left hand side of the object access operator</li>
- * <li>evaluates the property name</li>
- * <li>evaluates the value expression on the right hand side of the assignment operator</li>
- * <li>writes the named property</li>
- * <li>returns the written value</li>
- * </ol>
+ * Built-in function to create a new object. Objects in SL are simply made up of name/value pairs.
  */
-@NodeInfo(shortName = ".=")
-@NodeChildren({@NodeChild("receiverNode"), @NodeChild("nameNode"), @NodeChild("valueNode")})
-public abstract class SLWritePropertyNode extends SLExpressionNode {
-
-    /**
-     * The polymorphic cache node that performs the actual write. This is a separate node so that it
-     * can be re-used in cases where the receiver, name, and value are not nodes but already
-     * evaluated values.
-     */
-    @Child private SLWritePropertyCacheNode writeNode = SLWritePropertyCacheNodeGen.create();
+@NodeInfo(shortName = "newArray")
+public abstract class SLNewObjectArrayBuiltin extends SLBuiltinNode {
 
     @Specialization
-    protected Object write(VirtualFrame frame, Object receiver, Object name, Object value) {
-    	if (receiver.getClass().isArray()) {
-    		if ( name instanceof Long )
-    			Array.set(receiver, ((Long)name).intValue(), value);
-    		else
-    			throw new RuntimeException( "Non-integer value cannot be used as array index: " + name.toString() );
-    	}
-    	else {
-    		writeNode.executeWrite(frame, receiver, name, value);
-    	}
-    	
-        return value;
+    public Object newObjectArray( long length ) {
+        return getContext().createObjectArray( (int)length );
     }
 }
