@@ -59,6 +59,8 @@ import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.sl.SLLanguage;
+import com.oracle.truffle.sl.builtins.SLArrayLengthBuiltin;
+import com.oracle.truffle.sl.builtins.SLArrayLengthBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLBuiltinNode;
 import com.oracle.truffle.sl.builtins.SLDefineFunctionBuiltinFactory;
 import com.oracle.truffle.sl.builtins.SLEvalBuiltinFactory;
@@ -145,6 +147,7 @@ public final class SLContext extends ExecutionContext {
         installBuiltin(SLHelloEqualsWorldBuiltinFactory.getInstance());
         installBuiltin(SLNewObjectBuiltinFactory.getInstance());
         installBuiltin(SLNewObjectArrayBuiltinFactory.getInstance());
+        installBuiltin(SLArrayLengthBuiltinFactory.getInstance());
         installBuiltin(SLEvalBuiltinFactory.getInstance());
         installBuiltin(SLImportBuiltinFactory.getInstance());
         installBuiltin(SLGetSizeBuiltinFactory.getInstance());
