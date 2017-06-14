@@ -1,7 +1,8 @@
 function main() {
 //	t1();
 //	t2();
-	t3();
+//	t3();
+	t4( 42 );
 }
 
 function t1() {
@@ -34,4 +35,9 @@ function t3() {
 	o[ 0 ][ 0 ] = 42;
 	println( "o[ 0 ][ 0 ] = " + o[ 0 ][ 0 ] );
 	println( "arrayLength( o[ 0 ] ) = " + arrayLength( o[ 0 ] ) );
+}
+
+function t4( ... x )
+{
+	println( "x = " + x );
 }

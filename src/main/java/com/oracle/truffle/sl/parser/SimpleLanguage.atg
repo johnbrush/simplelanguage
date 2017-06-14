@@ -88,16 +88,35 @@ identifier                                      (. Token identifierToken = t; .)
 "("                                             (. int bodyStartPos = t.charPos; .)
                                                 (. factory.startFunction(identifierToken, bodyStartPos); .)
 [
-    identifier                                  (. factory.addFormalParameter(t); .)
-    {
-        ","
-        identifier                              (. factory.addFormalParameter(t); .)
-    }
+	(
+	    SimpleParameter
+	    {
+	        ","
+	        SimpleParameter
+	    }
+	    [
+	    	VarargParameter
+	    ]
+	|
+		VarargParameter
+	)
 ]
 ")"
 Block<out SLStatementNode body, false>          (. factory.finishFunction(body); .)
 .
 
+
+SimpleParameter
+=
+identifier										(. factory.addFormalParameter(t, SLNodeFactory.Modifier.NONE); .)
+.
+
+
+VarargParameter
+=
+"..."
+identifier										(. factory.addFormalParameter(t, SLNodeFactory.Modifier.VARARG); .)
+.
 
 
 Block<out SLStatementNode result, boolean inLoop>
@@ -268,7 +287,7 @@ MemberExpression<out SLExpressionNode result, SLExpressionNode r, SLExpressionNo
     Expression<out SLExpressionNode value>      (. if (assignmentName == null) {
                                                        SemErr("invalid assignment target");
                                                    } else if (assignmentReceiver == null) {
-                                                       result = factory.createAssignment(assignmentName, value);
+                                                       result = factory.createAssignment(assignmentName, value, SLNodeFactory.Modifier.NONE);
                                                    } else {
                                                        result = factory.createWriteProperty(assignmentReceiver, assignmentName, value);
                                                    } .)

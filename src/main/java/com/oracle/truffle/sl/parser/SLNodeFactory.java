@@ -42,12 +42,16 @@ package com.oracle.truffle.sl.parser;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.sl.nodes.SLExpressionNode;
@@ -110,6 +114,10 @@ public class SLNodeFactory {
             }
         }
     }
+    
+    static enum Modifier {
+    	NONE, VARARG
+    }
 
     /* State while parsing a source unit. */
     private final Source source;
@@ -151,14 +159,19 @@ public class SLNodeFactory {
         startBlock();
     }
 
-    public void addFormalParameter(Token nameToken) {
+    public void addFormalParameter(Token nameToken, Modifier ... modifiers) {
+    	Set< Modifier > modifiersAsSet = Arrays.asList( modifiers ).stream().collect(Collectors.toSet() );
+    	addFormalParameter( nameToken, modifiersAsSet );
+    }
+    
+    public void addFormalParameter(Token nameToken, Set< Modifier > modifiers) {
         /*
          * Method parameters are assigned to local variables at the beginning of the method. This
          * ensures that accesses to parameters are specialized the same way as local variables are
          * specialized.
          */
         final SLReadArgumentNode readArg = new SLReadArgumentNode(parameterCount);
-        SLExpressionNode assignment = createAssignment(createStringLiteral(nameToken, false), readArg);
+        SLExpressionNode assignment = createAssignment(createStringLiteral(nameToken, false), readArg, modifiers);
         methodNodes.add(assignment);
         parameterCount++;
     }
@@ -380,6 +393,11 @@ public class SLNodeFactory {
         return result;
     }
 
+    public SLExpressionNode createAssignment(SLExpressionNode nameNode, SLExpressionNode valueNode, Modifier ... modifiers) {
+    	Set< Modifier > modifiersAsSet = Arrays.asList( modifiers ).stream().collect(Collectors.toSet() );
+    	return createAssignment( nameNode, valueNode, modifiersAsSet );
+    }
+    
     /**
      * Returns an {@link SLWriteLocalVariableNode} for the given parameters.
      *
@@ -387,9 +405,9 @@ public class SLNodeFactory {
      * @param valueNode The value to be assigned
      * @return An SLExpressionNode for the given parameters.
      */
-    public SLExpressionNode createAssignment(SLExpressionNode nameNode, SLExpressionNode valueNode) {
+    public SLExpressionNode createAssignment(SLExpressionNode nameNode, SLExpressionNode valueNode, Set< Modifier > modifiers ) {
         String name = ((SLStringLiteralNode) nameNode).executeGeneric(null);
-        FrameSlot frameSlot = frameDescriptor.findOrAddFrameSlot(name);
+        FrameSlot frameSlot = frameDescriptor.findOrAddFrameSlot(name, modifiers, FrameSlotKind.Illegal);
         lexicalScope.locals.put(name, frameSlot);
         final SLExpressionNode result = SLWriteLocalVariableNodeGen.create(valueNode, frameSlot);
 
