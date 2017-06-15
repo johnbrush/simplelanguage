@@ -1,0 +1,13 @@
+a[ 0 ] = 42
+a[ 1 ] = beeblebrox
+a[ 2 ].m = 7
+a[ 3 ][ 0 ] = 11
+a[ 3 ][ 1 ] = 13
+a[ 3 ][ 2 ] = 17
+arrayLength( a ) = 5
+arrayLength( a[ 3 ] ) = 3
+arrayLength( a[ 4 ] ) = 0
+f( 7 ) = 7
+f( 7, 11 ) = 18
+f() = 0
+f2( 7, 11, 13 ) = 31

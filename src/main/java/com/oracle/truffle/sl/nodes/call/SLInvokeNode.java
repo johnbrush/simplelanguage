@@ -134,19 +134,30 @@ public final class SLInvokeNode extends SLExpressionNode {
 		Object[] adjustedArgumentValues;
 		
 		if ( numFormalParameters != 0 ) {
-			int argToParamDelta = argumentValues.length - numFormalParameters;
-
-			if (argToParamDelta < 0)
-				throw new SLException("Not enough arguments to invoke the function: " + function.getName());
-
 			Object info = slots.get(numFormalParameters - 1).getInfo();
 			Modifiers lastParamModifiers = (Modifiers) info;
 
 			if (lastParamModifiers.getModifiers().contains(Modifier.VARARG)) {
-				int numVarArgs = argToParamDelta + 1;
-				Object[] varargs = Arrays.copyOfRange(argumentValues, argumentValues.length - numVarArgs,
-						argumentValues.length);
-				adjustedArgumentValues = Arrays.copyOfRange(argumentValues, 0, argumentValues.length - argToParamDelta);
+				int formalParametersWithoutVararg = numFormalParameters - 1;
+				int numVarArgs = argumentValues.length - formalParametersWithoutVararg;
+				int numNonVarArgs = argumentValues.length - numVarArgs;
+
+				if (numVarArgs < 0)
+					throw new SLException("Not enough arguments to invoke the function: " + function.getName());
+				
+				Object[] varargs = Arrays.copyOfRange(argumentValues, numNonVarArgs, argumentValues.length);
+				
+				// Is the user passing an array as the actual argument for a vararg? In that case,
+				// the user array is assigned to varargs.
+				if ( varargs.length > 0 && varargs[ 0 ].getClass().isArray() )
+				{
+					if ( varargs.length > 1 )
+						throw new SLException( "Actual arguments do not match the formal parameters of the function: " + function.getName());
+					
+					varargs = (Object[])varargs[ 0 ];
+				}
+				
+				adjustedArgumentValues = Arrays.copyOfRange(argumentValues, 0, numNonVarArgs + 1);
 				adjustedArgumentValues[adjustedArgumentValues.length - 1] = varargs;
 			} else {
 				adjustedArgumentValues = argumentValues;

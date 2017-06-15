@@ -47,6 +47,14 @@
 
 COMPILER SimpleLanguage
 
+boolean isNonVarArg()
+{
+	boolean isNonVarArg = la.val.equals( "," ) && !scanner.Peek().val.equals( "..." );
+	scanner.ResetPeek();
+	
+	return isNonVarArg;
+}
+
 CHARACTERS
 
 letter = 'A'..'Z' + 'a'..'z'.
@@ -91,10 +99,12 @@ identifier                                      (. Token identifierToken = t; .)
 	(
 	    SimpleParameter
 	    {
+	    	IF(isNonVarArg())
 	        ","
 	        SimpleParameter
 	    }
 	    [
+	        ","
 	    	VarargParameter
 	    ]
 	|

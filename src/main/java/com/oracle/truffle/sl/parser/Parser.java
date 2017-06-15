@@ -73,7 +73,15 @@ public class Parser {
     public final Scanner scanner;
     public final Errors errors;
     private final SLNodeFactory factory;
-    
+    boolean isNonVarArg()
+{
+	boolean isNonVarArg = la.val.equals( "," ) && !scanner.Peek().val.equals( "..." );
+	scanner.ResetPeek();
+	
+	return isNonVarArg;
+}
+
+
     public Parser(Source source) {
         this.scanner = new Scanner(source.getInputStream());
         this.factory = new SLNodeFactory(source);
@@ -161,11 +169,12 @@ public class Parser {
 		if (la.kind == 1 || la.kind == 8) {
 			if (la.kind == 1) {
 				SimpleParameter();
-				while (la.kind == 6) {
-					Get();
+				while (isNonVarArg()) {
+					Expect(6);
 					SimpleParameter();
 				}
-				if (la.kind == 8) {
+				if (la.kind == 6) {
+					Get();
 					VarargParameter();
 				}
 			} else {
