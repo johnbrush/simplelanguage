@@ -47,6 +47,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.sl.SLException;
 import com.oracle.truffle.sl.nodes.SLExpressionNode;
 
 /**
@@ -76,7 +77,7 @@ public abstract class SLWritePropertyNode extends SLExpressionNode {
     		if ( name instanceof Long )
     			Array.set(receiver, ((Long)name).intValue(), value);
     		else
-    			throw new RuntimeException( "Non-integer value cannot be used as array index: " + name.toString() );
+    			throw new SLException( "Non-integer value cannot be used as array index: " + name.toString() );
     	}
     	else {
     		writeNode.executeWrite(frame, receiver, name, value);

@@ -1,9 +1,4 @@
 function main() {
-	testSimpleArray();
-}
-
-function testSimpleArray()
-{
 	a = newArray( 5 );
 	a[ 0 ] = 42;				// test integer
 	a[ 1 ] = "beeblebrox";		// test string
